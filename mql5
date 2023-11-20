@@ -1,0 +1,93 @@
+
+// Dragon Gold Forex Trading Robot
+// Developer: Forex Robot Easy Team
+// Website: forexroboteasy.com
+
+// Import necessary libraries
+#include <Trade\Trade.mqh>
+#include <Technical\Indicators\MovingAverages.mqh>
+
+// Define input parameters
+input double lotSize = 0.01; // Trading lot size
+input int stopLoss = 50; // Stop loss in pips
+input int takeProfit = 100; // Take profit in pips
+
+// Define global variables
+int ticket = 0; // Trade ticket number
+
+// Initialize the trading robot
+int OnInit()
+{
+   // Print initialization message
+   Print('Dragon Gold Forex Trading Robot initialized.');
+
+   // Return INIT_SUCCEEDED
+   return(INIT_SUCCEEDED);
+}
+
+// Start trading
+void OnTick()
+{
+   // Calculate moving averages
+   double maShort = iMA(NULL, 0, 10, 0, MODE_EMA, PRICE_CLOSE, 0);
+   double maLong = iMA(NULL, 0, 20, 0, MODE_EMA, PRICE_CLOSE, 0);
+
+   // Check if there is an open position
+   if (ticket == 0)
+   {
+      // Open a new buy position if the short moving average crosses above the long moving average
+      if (maShort > maLong)
+      {
+         ticket = OrderSend(Symbol(), OP_BUY, lotSize, Ask, 3, Bid - stopLoss * Point, Bid + takeProfit * Point, 'Dragon Gold', 0, 0, Green);
+      }
+      // Open a new sell position if the short moving average crosses below the long moving average
+      else if (maShort < maLong)
+      {
+         ticket = OrderSend(Symbol(), OP_SELL, lotSize, Bid, 3, Ask + stopLoss * Point, Ask - takeProfit * Point, 'Dragon Gold', 0, 0, Red);
+      }
+   }
+   else
+   {
+      // Check if the position is still open
+      if (!OrderSelect(ticket, SELECT_BY_TICKET))
+      {
+         // Print error message
+         Print('Error selecting the order with ticket ', ticket);
+         return;
+      }
+
+      // Check if the position is closed
+      if (OrderCloseTime() > 0)
+      {
+         // Print closing message
+         Print('Order with ticket ', ticket, ' closed.');
+
+         // Reset the ticket number
+         ticket = 0;
+      }
+   }
+}
+
+// Handle errors
+void OnDeinit(const int reason)
+{
+   // Print deinitialization message
+   Print('Dragon Gold Forex Trading Robot deinitialized.');
+
+   // Print the reason for deinitialization
+   switch(reason)
+   {
+      case REASON_REMOVE:
+         Print('Reason: Expert removed from the chart.');
+         break;
+      case REASON_RECOMPILE:
+         Print('Reason: Expert recompiled.');
+         break;
+      case REASON_CHARTCHANGE:
+         Print('Reason: Chart symbol or timeframe changed.');
+         break;
+      case REASON_CHARTCLOSE:
+         Print('Reason: Chart closed.');
+         break;
+   }
+}
